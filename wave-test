@@ -2,9 +2,10 @@
   if(window.gdWave){alert("Already running! Press Esc to remove.");return;}
   window.gdWave = true;
 
-  var c = document.createElement("canvas");
-  var x = c.getContext("2d");
-  var W = 400, H = 200;
+  // Setup canvas
+  const c = document.createElement("canvas");
+  const x = c.getContext("2d");
+  const W = 400, H = 200;
   c.width = W; c.height = H;
   Object.assign(c.style,{
     position:"fixed",top:"10px",left:"10px",
@@ -13,58 +14,47 @@
   });
   document.body.appendChild(c);
 
-  var y = H/2, v = 0, press = false, t = 0, speed = 2, obs = [], loopId;
+  // Game state
+  let y = H/2;
+  let dir = -1; // -1 = down, 1 = up
+  let press = false;
+  let t = 0;
+  let speed = 3;
+  let waveSlope = 3; // diagonal speed multiplier
+  let obs = [];
+  let loopId;
 
   function addObs(){
-    var g = 60 + 40*Math.random();
-    var top = Math.random()*(H-g-20);
-    obs.push({x:W, top:top, gap:g});
+    const g = 60 + 40*Math.random();
+    const top = Math.random()*(H - g - 20);
+    obs.push({x: W, top: top, gap: g});
   }
 
   function update(){
     t++;
-    if(t%60===0) addObs();
-    v += press ? -0.3 : 0.25;
-    if(v>5) v=5; if(v<-5) v=-5;
-    y += v; if(y<0) y=0; if(y>H) y=H;
+    if(t % 60 === 0) addObs();
+    // Wave movement — sharp flips, no acceleration
+    y += dir * waveSlope;
     obs.forEach(o => o.x -= speed);
-    while(obs.length && obs[0].x+20<0) obs.shift();
+    while(obs.length && obs[0].x + 20 < 0) obs.shift();
+
+    // Bounds
+    if(y < 0) y = 0;
+    if(y > H) y = H;
   }
 
   function draw(){
-    x.fillStyle="#000"; x.fillRect(0,0,W,H);
-    x.fillStyle="#0ff"; x.beginPath();
-    x.moveTo(20,y); x.lineTo(30,y-5); x.lineTo(30,y+5);
-    x.closePath(); x.fill();
-    x.fillStyle="#f0f";
-    for(const o of obs){
-      x.fillRect(o.x,0,20,o.top);
-      x.fillRect(o.x,o.top+o.gap,20,H-(o.top+o.gap));
-      if(o.x<30&&o.x+20>20&&(y<o.top||y>o.top+o.gap)){
-        x.fillStyle="red"; x.font="16px monospace";
-        x.fillText("💀 GAME OVER 💀",100,100);
-        cancelAnimationFrame(loopId);
-        window.gdWave=false;
-        return;
-      }
-    }
-  }
+    x.fillStyle = "#000";
+    x.fillRect(0, 0, W, H);
 
-  function loop(){ update(); draw(); loopId=requestAnimationFrame(loop); }
+    // Player (triangle wave)
+    x.fillStyle = "#0ff";
+    x.beginPath();
+    x.moveTo(20, y);
+    x.lineTo(30, y - 6);
+    x.lineTo(30, y + 6);
+    x.closePath();
+    x.fill();
 
-  window.addEventListener("mousedown",()=>press=true);
-  window.addEventListener("mouseup",()=>press=false);
-  window.addEventListener("keydown",e=>{
-    if(e.code==="Space") press=true;
-    if(e.code==="Escape"){
-      cancelAnimationFrame(loopId);
-      c.remove();
-      window.gdWave=false;
-    }
-  });
-  window.addEventListener("keyup",e=>{
-    if(e.code==="Space") press=false;
-  });
-
-  loop();
-})();
+    // Obstacles
+    x.fill
